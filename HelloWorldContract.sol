@@ -1,27 +1,26 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.8.18;
 
 contract HelloWorldContract {
     string word = "Hello Stepan Poperechnyi";
+    string thisIsCreator = "This is the creator!";
     address issuer;
     
-    function HelloWorldContract(){
+    constructor(){
         issuer = msg.sender;
     }
     
-    modifier ifIssuer(){
-        if(issuer != msg.sender){
-            throw;
-        } else {
-            _;
-        }
+    modifier ifIssuer() { 
+        require(issuer == msg.sender);
+        _;
     }
     
-    function getWord() constant returns(string){
+    
+    function getWord() public view returns(string memory){
         return word;
     }
     
-    function setWord(string newWord) ifIssuer returns(string){
+    function setWord(string memory newWord) external ifIssuer returns(string memory){
             word = newWord;
-            return "This is the creator!";
+            return thisIsCreator;
     }
 }
