@@ -1,36 +1,37 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "./SafeMath.sol";
+import "../SafeMath.sol";
 
 contract ERC20Basic {
+
     string public constant name = "Stepan Poperechnyi ERC20Basic";
     string public constant symbol = "SP_BSC";
     uint8 public constant decimals = 18;
 
-    event Approval(
-        address indexed tokenOwner,
-        address indexed spender,
-        uint tokens
-    );
+
+    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
     event Transfer(address indexed from, address indexed to, uint tokens);
+
 
     mapping(address => uint256) balances;
 
-    mapping(address => mapping(address => uint256)) allowed;
-
-    uint256 totalSupply_ = 200000000000000000000;
+    mapping(address => mapping (address => uint256)) allowed;
+    
+    uint256 totalSupply_;
 
     using SafeMath for uint256;
 
-    constructor(uint256 total) public {
-        totalSupply_ = total;
-        balances[msg.sender] = totalSupply_;
-    }
+
+   constructor(uint256 total) public {  
+	totalSupply_ = total;
+	balances[msg.sender] = totalSupply_;
+    }  
 
     function totalSupply() public view returns (uint256) {
-        return totalSupply_;
+	return totalSupply_;
     }
-
+    
     function balanceOf(address tokenOwner) public view returns (uint) {
         return balances[tokenOwner];
     }
@@ -49,21 +50,14 @@ contract ERC20Basic {
         return true;
     }
 
-    function allowance(
-        address owner,
-        address delegate
-    ) public view returns (uint) {
+    function allowance(address owner, address delegate) public view returns (uint) {
         return allowed[owner][delegate];
     }
 
-    function transferFrom(
-        address owner,
-        address buyer,
-        uint numTokens
-    ) public returns (bool) {
-        require(numTokens <= balances[owner]);
+    function transferFrom(address owner, address buyer, uint numTokens) public returns (bool) {
+        require(numTokens <= balances[owner]);    
         require(numTokens <= allowed[owner][msg.sender]);
-
+    
         balances[owner] = balances[owner].sub(numTokens);
         allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(numTokens);
         balances[buyer] = balances[buyer].add(numTokens);
