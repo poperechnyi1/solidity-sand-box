@@ -5,6 +5,7 @@ pragma solidity 0.8.18;
 import "./IERC4626.sol";
 import "./IERC20.sol";
 import "./ERC20.sol";
+import "./SafeMath.sol";
 
 // create your contract and inherit the your imports
 contract TokenizedVault is IERC4626, ERC20 {
@@ -20,8 +21,18 @@ contract TokenizedVault is IERC4626, ERC20 {
     // create your variables and immutables
     ERC20 public immutable asset;
 
+    //Defining structure
+    struct shareHolderStruct {
+        //Declaring different
+        // structure elements
+        uint depositeTime;
+        uint256 assets;
+    }
+
     // a mapping that checks if a user has deposited
-    mapping(address => uint256) shareHolder;
+    mapping(address => shareHolderStruct) shareHolder;
+
+    // mapping(address => uint) depositeTime;
 
     constructor(
         ERC20 _underlying,
@@ -38,7 +49,8 @@ contract TokenizedVault is IERC4626, ERC20 {
 
         asset.transferFrom(msg.sender, address(this), assets);
         // checks the value of assets the holder has
-        shareHolder[msg.sender] += assets;
+        shareHolder[msg.sender].assets += assets;
+        shareHolder[msg.sender].depositeTime = block.timestamp;
         // mints the reciept(shares)
         _mint(msg.sender, assets);
 
@@ -50,15 +62,36 @@ contract TokenizedVault is IERC4626, ERC20 {
         return asset.balanceOf(address(this));
     }
 
+    function getMinute(uint timestamp) public pure returns (uint8) {
+        return uint8((timestamp / 60) % 60);
+    }
+
+    function calculateRewardPerMinute(
+        uint depositeTime,
+        uint256 shares
+    ) internal view returns (uint256 reward) {
+        uint passedMinutes = getMinute(block.timestamp - depositeTime);
+        return (shares * passedMinutes) / 1000;
+    }
+
+    function getPublicInfoAboutDepositHolder(
+        address _address
+    ) public view returns (shareHolderStruct memory) {
+        return shareHolder[_address];
+    }
+
     // users to return shares and get thier token back before they can withdraw, and requiers that the user has a deposit
     function redeem(
         uint256 shares,
         address receiver
     ) internal returns (uint256 assets) {
-        require(shareHolder[msg.sender] > 0, "Not a share holder");
-        shareHolder[msg.sender] -= shares;
+        require(shareHolder[msg.sender].assets > 0, "Not a share holder");
+        shareHolder[msg.sender].assets -= shares;
 
-        uint256 per = (10 * shares) / 100;
+        uint256 per = calculateRewardPerMinute(
+            shareHolder[msg.sender].depositeTime,
+            shareHolder[msg.sender].assets
+        );
 
         _burn(msg.sender, shares);
 
