@@ -62,15 +62,25 @@ contract TokenizedVault is IERC4626, ERC20 {
         return asset.balanceOf(address(this));
     }
 
-    function getMinute(uint timestamp) public pure returns (uint8) {
-        return uint8((timestamp / 60) % 60);
+    function getMinutes(uint timestamp) public pure returns (uint) {
+        return uint(timestamp / 60 seconds);
     }
 
-    function calculateRewardPerMinute(
+    function getMinutesSecondVariat(uint timestamp) public pure returns (uint) {
+        return uint((timestamp / 60 seconds) % 60);
+    }
+
+    function getPassedAmountOfMinutes(
+        uint depositeTime
+    ) public view returns (uint) {
+        return getMinutes(block.timestamp - depositeTime);
+    }
+
+    function calculateRewardPerRangeOfTime(
         uint depositeTime,
         uint256 shares
-    ) internal view returns (uint256 reward) {
-        uint passedMinutes = getMinute(block.timestamp - depositeTime);
+    ) public view returns (uint256 reward) {
+        uint passedMinutes = getPassedAmountOfMinutes(depositeTime);
         return (shares * passedMinutes) / 1000;
     }
 
@@ -88,9 +98,9 @@ contract TokenizedVault is IERC4626, ERC20 {
         require(shareHolder[msg.sender].assets > 0, "Not a share holder");
         shareHolder[msg.sender].assets -= shares;
 
-        uint256 per = calculateRewardPerMinute(
+        uint256 per = calculateRewardPerRangeOfTime(
             shareHolder[msg.sender].depositeTime,
-            shareHolder[msg.sender].assets
+            shares
         );
 
         _burn(msg.sender, shares);
